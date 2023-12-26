@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import {Pressable, Button, Modal, StyleSheet, Text, View} from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
-import ColorPicker, { Panel1, colorKit, Swatches, Preview, OpacitySlider, HueSlider, BrightnessSlider } from 'reanimated-color-picker';
+import ColorPicker, { Panel2, colorKit, Swatches, Preview, OpacitySlider, HueSlider, BrightnessSlider, SaturationSlider, Panel3, Panel4 } from 'reanimated-color-picker';
 
 const Error = (reason) => {
   return (
@@ -64,8 +64,10 @@ const LEDColorPicker = () => {
               thumbShape='circle' 
               onChange={onSelectColor}
               boundedThumb>
-              <Panel1 style={styles.panelStyle} />
+              <Panel3 style={styles.panelStyle} />
               <HueSlider style={styles.sliderStyle} />
+              <SaturationSlider style={styles.sliderStyle} />
+              <Text style={{color: 'white', marginBottom: -15, marginTop: 20}}>Lysstyrke</Text>
               <BrightnessSlider style={styles.sliderStyle} />
               <Swatches 
                 style={styles.swatchesContainer}
@@ -74,7 +76,7 @@ const LEDColorPicker = () => {
             </ColorPicker>
           </View>
           <Pressable style={styles.buttonStyle} onPress={() => setShowModal(false)}>
-            <Text style={{fontWeight: 700, color: '#fff'}}>Close</Text>
+            <Text style={{fontWeight: 700, color: '#fff'}}>Lukk</Text>
           </Pressable>
         </Animated.View>
       </Modal>

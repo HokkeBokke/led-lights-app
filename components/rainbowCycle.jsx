@@ -5,7 +5,7 @@ const { useState } = require('react');
 const { Pressable, Text, Button, Modal, StyleSheet } = require("react-native")
 
 
-const RainbowButton = () => {
+const RainbowCycleButton = () => {
   const [showModal, setShowModal] = useState(false);
 
   // const [currentColor, setCurrentColor] = useState(colorKit.randomRgbColor().hex());
@@ -15,12 +15,12 @@ const RainbowButton = () => {
 
   const buttonPress = (ev) => {
     setShowModal(true);
-    socket.emit('rainbow animation', true);
+    socket.emit('rainbow cycle animation', true);
   }
 
   return (
     <>
-      <Button title="Rainbow Slide" onPress={buttonPress} />
+      <Button title="Rainbow Cycle" onPress={buttonPress} />
 
       <Modal visible={showModal} animationType='slide'>
         <Animated.View style={[styles.container, backgroundColorStyle]}>
@@ -59,4 +59,4 @@ const styles = StyleSheet.create({
   }
 })
 
-export default RainbowButton;
+export default RainbowCycleButton;

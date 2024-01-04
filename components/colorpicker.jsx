@@ -1,52 +1,28 @@
-import React, { useState } from "react";
-import {Pressable, Button, Modal, StyleSheet, Text, View} from 'react-native';
+import React, { useContext, useEffect, useState } from "react";
+import {Pressable, Button, Modal, StyleSheet, Text, View, InteractionManager} from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
-import ColorPicker, { Panel2, colorKit, Swatches, Preview, OpacitySlider, HueSlider, BrightnessSlider, SaturationSlider, Panel3, Panel4 } from 'reanimated-color-picker';
-
-const Error = (reason) => {
-  return (
-    <View style={styles.error}>
-      <Text style={{fontSize: 26, textAlign: 'center'}}>Noe gikk galt...</Text>
-      <Text style={{fontSize: 12, textAlign: 'center'}}>{reason}</Text>
-    </View>
-  )
-}
+import ColorPicker, { Panel2, colorKit, Swatches, HueSlider, BrightnessSlider, SaturationSlider, Panel3, Panel4, Panel1, Panel5, RedSlider, GreenSlider, BlueSlider, HueCircular, Preview } from 'reanimated-color-picker';
+import socket, { colorFromServer } from './socket';
 
 const LEDColorPicker = () => {
+  useEffect(() => {
+    selectedColor.value = colorFromServer;
+  }, [colorFromServer])
+
   const [showModal, setShowModal] = useState(false);
-  const [showError, setShowError] = useState(false);
-  let error = "";
 
   const customSwatches = new Array(6)
     .fill('#fff')
     .map(() => colorKit.randomRgbColor().hex());
   
-  const selectedColor = useSharedValue(customSwatches[0]);
+  const selectedColor = useSharedValue(colorFromServer);
   const backgroundColorStyle = useAnimatedStyle(() => ({
     backgroundColor: selectedColor.value,
   }))
 
   const onSelectColor = ({ hex }) => {
-    fetch(`http://192.168.2.135:8765/api/v1/changeLights`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Application': 'LEDLights'
-      },
-      body: JSON.stringify({
-        token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSMOla29uIiwiYWRkcmVzcyI6Ikt2aXR1bmdldmVnZW4gMTMifQ.XzE6QgAyVre_kdag35fG6fXvosngWAIcVQikYHrxaWQ",
-        hex: hex
-      })
-    }).then(async(res) => {
-      if (res.status != 200){
-        error = await res.text();
-        setShowError(true);
-      } else setShowError(false);
-    }).catch((reason) => {
-      setShowError(true);
-      error = reason;
-    })
     selectedColor.value = hex;
+    socket.emit('rgb value', hex);
   }
 
   return (
@@ -54,7 +30,6 @@ const LEDColorPicker = () => {
       <Button title='Velg farge' onPress={() => setShowModal(true)} />
 
       <Modal visible={showModal} animationType="slide">
-        { showError ? Error(error) : null}
         <Animated.View style={[styles.container, backgroundColorStyle]}>
           <View style={styles.pickerContainer}>
             <ColorPicker 
@@ -63,9 +38,9 @@ const LEDColorPicker = () => {
               thumbSize={24}
               thumbShape='circle' 
               onChange={onSelectColor}
-              boundedThumb>
-              <Panel3 style={styles.panelStyle} />
-              <HueSlider style={styles.sliderStyle} />
+              boundedThumb
+              adaptSpectrum>
+              <HueCircular sliderThickness={15} containerStyle={styles.hueContainer}><Preview style={styles.previewStyle} /></HueCircular>
               <SaturationSlider style={styles.sliderStyle} />
               <Text style={{color: 'white', marginBottom: -15, marginTop: 20}}>Lysstyrke</Text>
               <BrightnessSlider style={styles.sliderStyle} />
@@ -118,6 +93,20 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
 
     elevation: 5,
+  },
+  hueContainer: {
+    justifyContent: 'center',
+    backgroundColor: '#202020'
+  },
+  innerPanelStyle: {
+    width: '90%',
+    height: '90%',
+    alignSelf: 'center'
+  },
+  previewStyle: {
+    height: '20%',
+    width: '70%',
+    alignSelf: 'center'
   },
   sliderStyle: {
     borderRadius: 20,

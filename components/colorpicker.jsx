@@ -1,20 +1,21 @@
 import React, { useContext, useEffect, useState } from "react";
-import {Pressable, Button, Modal, StyleSheet, Text, View, InteractionManager} from 'react-native';
+import {Pressable, Button, Modal, StyleSheet, Text, View, InteractionManager, Image} from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
-import ColorPicker, { Panel2, colorKit, Swatches, HueSlider, BrightnessSlider, SaturationSlider, Panel3, Panel4, Panel1, Panel5, RedSlider, GreenSlider, BlueSlider, HueCircular, Preview } from 'reanimated-color-picker';
+import ColorPicker, { colorKit, Swatches, HueSlider, BrightnessSlider, SaturationSlider, Panel3, Panel4, Panel1, Panel5, RedSlider, GreenSlider, BlueSlider, HueCircular, Preview } from 'reanimated-color-picker';
 import socket, { colorFromServer } from './socket';
+import onOff from '../assets/turn-off.png';
 
 const LEDColorPicker = () => {
-  useEffect(() => {
-    selectedColor.value = colorFromServer;
-  }, [colorFromServer])
+  socket.on('current color', (color) => {
+    selectedColor.value = color;
+  })
 
   const [showModal, setShowModal] = useState(false);
 
   const customSwatches = new Array(6)
     .fill('#fff')
     .map(() => colorKit.randomRgbColor().hex());
-  
+
   const selectedColor = useSharedValue(colorFromServer);
   const backgroundColorStyle = useAnimatedStyle(() => ({
     backgroundColor: selectedColor.value,
@@ -23,6 +24,51 @@ const LEDColorPicker = () => {
   const onSelectColor = ({ hex }) => {
     selectedColor.value = hex;
     socket.emit('rgb value', hex);
+  }
+
+  const onOffPress = (ev) => {
+    socket.emit('toggle power');
+  }
+
+  const [RGBPickerView, setRGBPickerView] = useState(false);
+
+  const DefaultPicker = () => {
+    return (
+      <>
+        <HueCircular sliderThickness={15} containerStyle={styles.hueContainer}><Pressable onPressOut={onOffPress} style={({pressed}) => [
+          {backgroundColor: pressed ? 'white' : 'grey'},
+          styles.onOffButton
+        ]}><Image source={onOff} style={{width: '80%', height: '80%', alignSelf: 'center'}} /></Pressable></HueCircular>
+        <SaturationSlider style={styles.sliderStyle} />
+        <Text style={{color: 'white', marginBottom: -15, marginTop: 20}}>Lysstyrke</Text>
+        <BrightnessSlider  style={styles.sliderStyle} />
+        <Swatches 
+          style={styles.swatchesContainer}
+          swatchStyle={styles.swatchStyle}
+          colors={customSwatches} />
+      </>
+    )
+  }
+
+  const RGBPicker = () => {
+    return (
+      <>
+        <View style={{flexDirection: 'row', justifyContent: 'space-around', width: '100%'}}>
+          <Text style={{fontWeight: 600, color: '#fff'}}>Red</Text>
+          <Text style={{fontWeight: 600, color: '#fff'}}>Green</Text>
+          <Text style={{fontWeight: 600, color: '#fff'}}>Blue</Text>
+        </View>
+        <View style={{flexDirection: 'row', justifyContent: 'space-around', width: '100%', height: 300}}>
+          <RedSlider style={styles.sliderStyle} vertical reverse />
+          <GreenSlider style={styles.sliderStyle} vertical reverse />
+          <BlueSlider style={styles.sliderStyle} vertical reverse />
+        </View>
+        <Swatches 
+          style={styles.swatchesContainer}
+          swatchStyle={styles.swatchStyle}
+          colors={customSwatches} />
+      </>
+    )
   }
 
   return (
@@ -38,21 +84,18 @@ const LEDColorPicker = () => {
               thumbSize={24}
               thumbShape='circle' 
               onChange={onSelectColor}
-              boundedThumb
-              adaptSpectrum>
-              <HueCircular sliderThickness={15} containerStyle={styles.hueContainer}><Preview style={styles.previewStyle} /></HueCircular>
-              <SaturationSlider style={styles.sliderStyle} />
-              <Text style={{color: 'white', marginBottom: -15, marginTop: 20}}>Lysstyrke</Text>
-              <BrightnessSlider style={styles.sliderStyle} />
-              <Swatches 
-                style={styles.swatchesContainer}
-                swatchStyle={styles.swatchStyle}
-                colors={customSwatches} />
+              boundedThumb>
+              {RGBPickerView ? <RGBPicker /> : <DefaultPicker />}
             </ColorPicker>
           </View>
-          <Pressable style={styles.buttonStyle} onPress={() => setShowModal(false)}>
-            <Text style={{fontWeight: 700, color: '#fff'}}>Lukk</Text>
-          </Pressable>
+          <View style={{flexDirection: 'row', alignSelf: 'center', justifyContent: 'space-around', width: '80%'}}>
+            <Pressable style={styles.buttonStyle} onPress={() => setShowModal(false)}>
+              <Text style={{fontWeight: 700, color: '#fff'}}>Lukk</Text>
+            </Pressable>
+            <Pressable style={styles.buttonStyle} onPress={() => setRGBPickerView(!RGBPickerView)}>
+              <Text style={{fontWeight: 700, color: '#fff'}}>{RGBPickerView ? "Hue" : "RGB"}</Text>
+            </Pressable>
+          </View>
         </Animated.View>
       </Modal>
     </>
@@ -97,6 +140,16 @@ const styles = StyleSheet.create({
   hueContainer: {
     justifyContent: 'center',
     backgroundColor: '#202020'
+  },
+  onOffButton: {
+    width: '80%',
+    height: '80%',
+    alignSelf: 'center',
+    borderRadius: '100%',
+    borderColor: 'black',
+    borderStyle: 'solid',
+    borderWidth: 2,
+    justifyContent: 'center'
   },
   innerPanelStyle: {
     width: '90%',
